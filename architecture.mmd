@@ -1,0 +1,81 @@
+graph TD
+    User(["👤 User"])
+
+    subgraph CLI ["CLI Layer"]
+        MAIN["main.py\nEntry point · CLI flags"]
+        REPL["ui/repl.py\nREPL · slash commands · history"]
+    end
+
+    subgraph AgentLayer ["Agent Layer"]
+        LOOP["agent/loop.py\nAgentLoop.run_once()"]
+        CTX["agent/context.py\nContextManager\n(messages · token trim)"]
+        PERM["agent/permissions.py\nPermission gate\n(auto-approve reads · y/N writes)"]
+    end
+
+    subgraph LLMLayer ["LLM Layer"]
+        CLIENT["llm/client.py\nLLMClient\n(streaming · tool_call accumulation)"]
+    end
+
+    subgraph ToolsLayer ["Tools Layer"]
+        REG["tools/registry.py\nTOOL_SCHEMAS\n(OpenAI function-calling JSON)"]
+        EXEC["tools/executor.py\nDispatcher"]
+        FOPS["tools/file_ops.py\nread · write · edit"]
+        SHELL["tools/shell.py\nrun_bash"]
+        SEARCH["tools/search.py\nglob · grep · list_dir"]
+    end
+
+    subgraph RAGLayer ["RAG Layer"]
+        INGEST["rag/ingestion.py\ningest() · retrieve()"]
+        EMBED["rag/embedder.py\nEmbedder\n(batch embed)"]
+        STORE["rag/vector_store.py\nVectorStore\n(upsert · cosine search)"]
+    end
+
+    subgraph External ["External Services"]
+        QWEN["🦙 Ollama\nqwen2.5-coder:7b"]
+        NOMIC["🦙 Ollama\nnomic-embed-text"]
+        QDRANT[("🗄️ Qdrant\nvector DB")]
+        FS[("📁 Filesystem")]
+        OS["💻 OS / Shell"]
+    end
+
+    CONFIG["config.py\nConfig\n(model · qdrant_url · chunk_size …)"]
+
+    %% User flow
+    User -->|"types prompt"| REPL
+    MAIN --> REPL
+    REPL -->|"run_once(input)"| LOOP
+
+    %% Agent loop internals
+    LOOP <-->|"add / get messages"| CTX
+    LOOP -->|"messages + TOOL_SCHEMAS"| CLIENT
+    REG -->|"injected into every call"| LOOP
+    CLIENT -->|"streaming chunks\n{text · tool_call · done}"| LOOP
+
+    %% Permission check
+    LOOP -->|"check_permission(tool, args)"| PERM
+    PERM -->|"y/N prompt"| User
+
+    %% Tool dispatch
+    LOOP -->|"execute_tool(name, args)"| EXEC
+    EXEC --> FOPS
+    EXEC --> SHELL
+    EXEC --> SEARCH
+    EXEC -->|"ingest / retrieve"| INGEST
+
+    %% Tool → external
+    FOPS <--> FS
+    SEARCH <--> FS
+    SHELL <--> OS
+    CLIENT <--> QWEN
+
+    %% RAG internals
+    INGEST --> EMBED
+    INGEST --> STORE
+    EMBED <-->|"/v1/embeddings"| NOMIC
+    STORE <-->|"upsert · search"| QDRANT
+
+    %% Config feeds everything
+    CONFIG -.->|"model · base_url"| CLIENT
+    CONFIG -.->|"working_dir · bash_timeout"| EXEC
+    CONFIG -.->|"qdrant_url · embed_model\nrag_collection · chunk_size"| STORE
+    CONFIG -.->|"context_limit"| CTX
