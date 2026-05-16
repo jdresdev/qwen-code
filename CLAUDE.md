@@ -69,6 +69,7 @@ All config keys and their defaults:
 | `rag_collection` | `default` | Qdrant collection name |
 | `rag_chunk_size` | `500` | Words per chunk during ingestion |
 | `rag_chunk_overlap` | `50` | Overlapping words between chunks |
+| `max_tool_rounds` | `10` | Max tool-call rounds per user turn before stopping |
 
 ## Architecture
 

@@ -29,20 +29,30 @@ class AgentLoop:
         self._loop()
 
     def _loop(self) -> None:
+        rounds = 0
         while True:
             snapshot = len(self.ctx.messages)
             try:
-                done = self._step()
+                done, used_tools = self._step()
             except KeyboardInterrupt:
                 del self.ctx.messages[snapshot:]
                 console.print("\n[yellow]Interrupted.[/yellow]")
                 return
+            if used_tools:
+                rounds += 1
+                if rounds >= self.config.max_tool_rounds:
+                    console.print(
+                        f"\n[yellow]Warning: reached max tool rounds "
+                        f"({self.config.max_tool_rounds}). Stopping.[/yellow]"
+                    )
+                    break
             if done:
                 break
 
-    def _step(self) -> bool:
+    def _step(self) -> tuple[bool, bool]:
         """One reasoning round: LLM call → optional tool execution.
-        Returns True when the loop should stop, False to continue."""
+        Returns (done, used_tools): done=True means stop the loop;
+        used_tools=True means at least one tool call was executed this round."""
         # Collect the full streamed response
         text_parts: list[str] = []
         tool_calls: list[dict] = []
@@ -77,7 +87,7 @@ class AgentLoop:
 
         # If no tool calls, the model is done — exit the loop
         if not tool_calls:
-            return True
+            return True, False
 
         # Execute each tool call
         all_denied = True
@@ -115,9 +125,9 @@ class AgentLoop:
 
         # If every tool was denied, stop to avoid infinite loop
         if all_denied:
-            return True
+            return True, False
 
-        return False
+        return False, True
 
 
 def _summarize_args(args_json: str, max_len: int = 80) -> str:
