@@ -31,6 +31,9 @@ class ContextManager:
     def get(self) -> list[dict]:
         return self.messages
 
+    def clear(self) -> None:
+        self.messages = [{"role": "system", "content": SYSTEM_PROMPT}]
+
     def token_estimate(self) -> int:
         # Rough estimate: 1 token ≈ 4 chars
         return len(str(self.messages)) // 4

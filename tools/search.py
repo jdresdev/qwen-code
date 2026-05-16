@@ -41,7 +41,7 @@ def grep_files(
     # Prefer ripgrep if available
     if shutil.which("rg"):
         return _grep_rg(pattern, str(p), glob, case_insensitive)
-    return _grep_python(pattern, p, glob, case_insensitive)
+    return _grep_python(p, pattern, glob, case_insensitive)
 
 
 def _grep_rg(pattern: str, path: str, glob: str | None, case_insensitive: bool) -> str:

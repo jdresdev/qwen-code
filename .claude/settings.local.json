@@ -16,7 +16,8 @@
       "Bash(cp ~/.config/local-agent/config.json ~/.config/qwen-code/config.json)",
       "Bash(powershell.exe -Command \"Rename-Item 'C:\\\\git\\\\local-code-agent-tool' 'qwen-code'\")",
       "Bash(git *)",
-      "Bash(python3 *)"
+      "Bash(python3 *)",
+      "Bash(pip3 install *)"
     ]
   }
 }
