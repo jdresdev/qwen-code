@@ -94,6 +94,7 @@ tools/
   shell.py         run_bash (subprocess, 30s timeout, 10k char output cap)
   search.py        glob_files (pathlib.rglob), grep_files (ripgrep or Python re), list_dir
   git.py           git_status, git_diff, git_log (auto-approved), git_commit (requires confirmation)
+  web.py           fetch_url — fetches a URL, converts HTML to markdown (auto-approved)
 
 rag/
   embedder.py      Embedder — calls Ollama /v1/embeddings (nomic-embed-text, 768-dim)

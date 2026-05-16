@@ -309,4 +309,29 @@ TOOL_SCHEMAS: list[dict] = [
             },
         },
     },
+    {
+        "type": "function",
+        "function": {
+            "name": "fetch_url",
+            "description": (
+                "Fetch a URL and return its content as plain text. "
+                "HTML pages are converted to readable markdown. "
+                "Only http/https URLs are supported."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "url": {
+                        "type": "string",
+                        "description": "Full URL to fetch (must start with http:// or https://).",
+                    },
+                    "max_chars": {
+                        "type": "integer",
+                        "description": "Truncate output to this many characters. Default 8000.",
+                    },
+                },
+                "required": ["url"],
+            },
+        },
+    },
 ]

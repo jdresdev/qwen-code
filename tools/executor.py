@@ -8,6 +8,7 @@ from tools.file_ops import read_file, write_file, edit_file
 from tools.git import git_status, git_diff, git_log, git_commit
 from tools.shell import run_bash
 from tools.search import glob_files, grep_files, list_dir
+from tools.web import fetch_url
 
 # RAG singletons — lazily initialised on first use so that the agent
 # starts without requiring Qdrant/embedder to be available.
@@ -127,6 +128,11 @@ def execute_tool(name: str, arguments_json: str, config: Config) -> str:
                 files=args.get("files"),
                 stage_all=args.get("all", False),
                 working_dir=wd,
+            )
+        elif name == "fetch_url":
+            return fetch_url(
+                url=args["url"],
+                max_chars=args.get("max_chars", 8000),
             )
         else:
             return f"Error: unknown tool '{name}'"

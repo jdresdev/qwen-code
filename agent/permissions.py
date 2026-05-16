@@ -14,6 +14,7 @@ console = Console()
 AUTO_APPROVE = {
     "read_file", "glob_files", "grep_files", "list_dir", "retrieve_context",
     "git_status", "git_diff", "git_log",
+    "fetch_url",
 }
 
 # Human-friendly descriptions of what each tool does
