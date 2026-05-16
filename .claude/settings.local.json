@@ -14,7 +14,8 @@
       "Bash(curl -s http://172.26.32.1:11434/api/tags)",
       "Bash(mkdir -p ~/.config/qwen-code)",
       "Bash(cp ~/.config/local-agent/config.json ~/.config/qwen-code/config.json)",
-      "Bash(powershell.exe -Command \"Rename-Item 'C:\\\\git\\\\local-code-agent-tool' 'qwen-code'\")"
+      "Bash(powershell.exe -Command \"Rename-Item 'C:\\\\git\\\\local-code-agent-tool' 'qwen-code'\")",
+      "Bash(git *)"
     ]
   }
 }
