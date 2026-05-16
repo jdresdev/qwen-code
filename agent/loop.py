@@ -30,79 +30,94 @@ class AgentLoop:
 
     def _loop(self) -> None:
         while True:
-            # Collect the full streamed response
-            text_parts: list[str] = []
-            tool_calls: list[dict] = []
-
-            with Live(Spinner("dots", text="Thinking…"), console=console, refresh_per_second=10):
-                for chunk in self.llm.chat(self.ctx.get(), tools=TOOL_SCHEMAS):
-                    if chunk["type"] == "text":
-                        text_parts.append(chunk["content"])
-                    elif chunk["type"] == "tool_call":
-                        tool_calls.append(chunk)
-                    elif chunk["type"] == "done":
-                        break
-
-            full_text = "".join(text_parts).strip()
-
-            # Build the assistant message for history
-            assistant_msg: dict = {"role": "assistant", "content": full_text or None}
-            if tool_calls:
-                assistant_msg["tool_calls"] = [
-                    {
-                        "id": tc["id"],
-                        "type": "function",
-                        "function": {"name": tc["name"], "arguments": tc["arguments"]},
-                    }
-                    for tc in tool_calls
-                ]
-            self.ctx.add_raw(assistant_msg)
-
-            # Print any text the model produced
-            if full_text:
-                console.print(Markdown(full_text))
-
-            # If no tool calls, the model is done
-            if not tool_calls:
+            snapshot = len(self.ctx.messages)
+            try:
+                done = self._step()
+            except KeyboardInterrupt:
+                del self.ctx.messages[snapshot:]
+                console.print("\n[yellow]Interrupted.[/yellow]")
+                return
+            if done:
                 break
 
-            # Execute each tool call
-            all_denied = True
-            for tc in tool_calls:
-                name = tc["name"]
-                args_json = tc["arguments"]
+    def _step(self) -> bool:
+        """One reasoning round: LLM call → optional tool execution.
+        Returns True when the loop should stop, False to continue."""
+        # Collect the full streamed response
+        text_parts: list[str] = []
+        tool_calls: list[dict] = []
 
-                # Show what tool is being called
-                console.print(
-                    Panel(
-                        Text(f"{name}({_summarize_args(args_json)})", style="cyan"),
-                        title="[bold blue]Tool call[/bold blue]",
-                        border_style="blue",
-                        expand=False,
-                    )
+        with Live(Spinner("dots", text="Thinking…"), console=console, refresh_per_second=10):
+            for chunk in self.llm.chat(self.ctx.get(), tools=TOOL_SCHEMAS):
+                if chunk["type"] == "text":
+                    text_parts.append(chunk["content"])
+                elif chunk["type"] == "tool_call":
+                    tool_calls.append(chunk)
+                elif chunk["type"] == "done":
+                    break
+
+        full_text = "".join(text_parts).strip()
+
+        # Build the assistant message for history
+        assistant_msg: dict = {"role": "assistant", "content": full_text or None}
+        if tool_calls:
+            assistant_msg["tool_calls"] = [
+                {
+                    "id": tc["id"],
+                    "type": "function",
+                    "function": {"name": tc["name"], "arguments": tc["arguments"]},
+                }
+                for tc in tool_calls
+            ]
+        self.ctx.add_raw(assistant_msg)
+
+        # Print any text the model produced
+        if full_text:
+            console.print(Markdown(full_text))
+
+        # If no tool calls, the model is done — exit the loop
+        if not tool_calls:
+            return True
+
+        # Execute each tool call
+        all_denied = True
+        for tc in tool_calls:
+            name = tc["name"]
+            args_json = tc["arguments"]
+
+            # Show what tool is being called
+            console.print(
+                Panel(
+                    Text(f"{name}({_summarize_args(args_json)})", style="cyan"),
+                    title="[bold blue]Tool call[/bold blue]",
+                    border_style="blue",
+                    expand=False,
                 )
+            )
 
-                # Check permission
-                if not check_permission(name, args_json):
-                    result = "Tool call denied by user."
-                else:
-                    all_denied = False
-                    result = execute_tool(name, args_json, self.config)
+            # Check permission
+            if not check_permission(name, args_json):
+                result = "Tool call denied by user."
+            else:
+                all_denied = False
+                result = execute_tool(name, args_json, self.config)
 
-                # Print result preview
-                preview = result[:300] + ("…" if len(result) > 300 else "")
-                console.print(f"[dim]{preview}[/dim]\n")
+            # Print result preview
+            preview = result[:300] + ("…" if len(result) > 300 else "")
+            console.print(f"[dim]{preview}[/dim]\n")
 
-                # Add tool result to context
-                self.ctx.add_raw({
-                    "role": "tool",
-                    "tool_call_id": tc["id"],
-                    "content": result,
-                })
+            # Add tool result to context
+            self.ctx.add_raw({
+                "role": "tool",
+                "tool_call_id": tc["id"],
+                "content": result,
+            })
 
-            # If every tool was denied, stop to avoid infinite loop
-            if all_denied:
-                break
+        # If every tool was denied, stop to avoid infinite loop
+        if all_denied:
+            return True
+
+        return False
 
 
 def _summarize_args(args_json: str, max_len: int = 80) -> str:
