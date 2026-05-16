@@ -91,6 +91,7 @@ tools/
   file_ops.py      read_file, write_file, edit_file
   shell.py         run_bash (subprocess, 30s timeout, 10k char output cap)
   search.py        glob_files (pathlib.rglob), grep_files (ripgrep or Python re), list_dir
+  git.py           git_status, git_diff, git_log (auto-approved), git_commit (requires confirmation)
 
 rag/
   embedder.py      Embedder — calls Ollama /v1/embeddings (nomic-embed-text, 768-dim)
@@ -100,8 +101,9 @@ rag/
 
 agent/
   context.py       ContextManager — holds messages[], system prompt, trims oldest when near limit
-  permissions.py   AUTO_APPROVE = {read_file, glob_files, grep_files, list_dir, retrieve_context}
-                   Prompts y/N for: write_file, edit_file, run_bash, ingest_documents
+  permissions.py   AUTO_APPROVE = {read_file, glob_files, grep_files, list_dir, retrieve_context,
+                                   git_status, git_diff, git_log}
+                   Prompts y/N for: write_file, edit_file, run_bash, ingest_documents, git_commit
   loop.py          AgentLoop.run_once() — the core reasoning loop:
                      1. Add user msg → 2. Stream LLM → 3. If tool_calls: check perm → execute
                      → append tool result → repeat from 2. Stop when plain text response.

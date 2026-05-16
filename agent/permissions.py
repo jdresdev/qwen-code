@@ -11,7 +11,10 @@ from rich.syntax import Syntax
 console = Console()
 
 # These tools are always approved silently
-AUTO_APPROVE = {"read_file", "glob_files", "grep_files", "list_dir", "retrieve_context"}
+AUTO_APPROVE = {
+    "read_file", "glob_files", "grep_files", "list_dir", "retrieve_context",
+    "git_status", "git_diff", "git_log",
+}
 
 # Human-friendly descriptions of what each tool does
 _DESCRIPTIONS = {
@@ -19,6 +22,7 @@ _DESCRIPTIONS = {
     "edit_file": "Edit file",
     "run_bash": "Run shell command",
     "ingest_documents": "Ingest documents into vector store",
+    "git_commit": "Git commit",
 }
 
 
@@ -94,6 +98,17 @@ def _show_permission_request(label: str, tool_name: str, args: dict) -> None:
             f"[red]- {old_str[:200]}[/red]\n"
             f"[green]+ {new_str[:200]}[/green]"
         )
+    elif tool_name == "git_commit":
+        msg = args.get("message", "")
+        files = args.get("files")
+        stage_all = args.get("all", False)
+        content = f"[bold]Message:[/bold] {msg}"
+        if files:
+            content += "\n[bold]Files:[/bold] " + ", ".join(files)
+        elif stage_all:
+            content += "\n[bold]Staging:[/bold] all tracked modified files"
+        else:
+            content += "\n[bold]Staging:[/bold] already-staged changes"
     else:
         content = json.dumps(args, indent=2)[:500]
 

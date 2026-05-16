@@ -5,6 +5,7 @@ import json
 
 from config import Config
 from tools.file_ops import read_file, write_file, edit_file
+from tools.git import git_status, git_diff, git_log, git_commit
 from tools.shell import run_bash
 from tools.search import glob_files, grep_files, list_dir
 
@@ -103,6 +104,29 @@ def execute_tool(name: str, arguments_json: str, config: Config) -> str:
                 embedder=embedder,
                 store=store,
                 top_k=args.get("top_k", 5),
+            )
+        elif name == "git_status":
+            return git_status(working_dir=args.get("path", wd))
+        elif name == "git_diff":
+            return git_diff(
+                path=args.get("path"),
+                staged=args.get("staged", False),
+                commit=args.get("commit"),
+                working_dir=wd,
+            )
+        elif name == "git_log":
+            return git_log(
+                n=args.get("n", 10),
+                path=args.get("path"),
+                oneline=args.get("oneline", True),
+                working_dir=wd,
+            )
+        elif name == "git_commit":
+            return git_commit(
+                message=args["message"],
+                files=args.get("files"),
+                stage_all=args.get("all", False),
+                working_dir=wd,
             )
         else:
             return f"Error: unknown tool '{name}'"

@@ -216,4 +216,97 @@ TOOL_SCHEMAS: list[dict] = [
             },
         },
     },
+    {
+        "type": "function",
+        "function": {
+            "name": "git_status",
+            "description": "Show the current git branch and working tree status (staged, unstaged, untracked files).",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "path": {
+                        "type": "string",
+                        "description": "Repository root. Defaults to working directory.",
+                    },
+                },
+                "required": [],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "git_diff",
+            "description": "Show changes between the working tree and HEAD, or between commits. Output truncated at 8000 chars.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "path": {
+                        "type": "string",
+                        "description": "File or directory to scope the diff. Optional.",
+                    },
+                    "staged": {
+                        "type": "boolean",
+                        "description": "Diff staged changes (--cached). Default false.",
+                    },
+                    "commit": {
+                        "type": "string",
+                        "description": "Diff against this commit or ref. Optional.",
+                    },
+                },
+                "required": [],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "git_log",
+            "description": "Show recent commit history.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "n": {
+                        "type": "integer",
+                        "description": "Number of commits to show. Default 10.",
+                    },
+                    "path": {
+                        "type": "string",
+                        "description": "Limit log to commits touching this path. Optional.",
+                    },
+                    "oneline": {
+                        "type": "boolean",
+                        "description": "Compact one-line format. Default true.",
+                    },
+                },
+                "required": [],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "git_commit",
+            "description": "Stage files (if specified) and create a git commit.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "message": {
+                        "type": "string",
+                        "description": "Commit message.",
+                    },
+                    "files": {
+                        "type": "array",
+                        "items": {"type": "string"},
+                        "description": "Files to stage before committing. Optional — omit to commit already-staged changes.",
+                    },
+                    "all": {
+                        "type": "boolean",
+                        "description": "Stage all tracked modified files before committing (-u). Default false.",
+                    },
+                },
+                "required": ["message"],
+            },
+        },
+    },
 ]
