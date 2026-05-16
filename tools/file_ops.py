@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import difflib
 from pathlib import Path
 
 
@@ -33,7 +34,13 @@ def write_file(path: str, content: str, working_dir: str = ".") -> str:
         return f"Error writing file: {e}"
 
 
-def edit_file(path: str, old_string: str, new_string: str, working_dir: str = ".") -> str:
+def edit_file(
+    path: str,
+    old_string: str,
+    new_string: str,
+    replace_all: bool = False,
+    working_dir: str = ".",
+) -> str:
     p = _resolve(path, working_dir)
     if not p.exists():
         return f"Error: file not found: {p}"
@@ -44,14 +51,27 @@ def edit_file(path: str, old_string: str, new_string: str, working_dir: str = ".
 
     count = content.count(old_string)
     if count == 0:
-        return "Error: old_string not found in file. Read the file first to get the exact text."
-    if count > 1:
-        return f"Error: old_string appears {count} times — provide more context to make it unique."
+        lines = content.splitlines()
+        needle = old_string.splitlines()[0] if old_string else old_string
+        close = difflib.get_close_matches(needle, lines, n=3, cutoff=0.6)
+        hint = ("\nClose matches:\n" + "\n".join(f"  {l}" for l in close)) if close else ""
+        return f"Error: old_string not found in file.{hint}"
+    if count > 1 and not replace_all:
+        positions = [
+            i + 1
+            for i, line in enumerate(content.splitlines())
+            if old_string.splitlines()[0] in line
+        ]
+        return (
+            f"Error: old_string appears {count} times (near lines {positions}). "
+            "Provide more surrounding context to make it unique, or set replace_all=true."
+        )
 
-    new_content = content.replace(old_string, new_string, 1)
+    new_content = content.replace(old_string, new_string) if replace_all else content.replace(old_string, new_string, 1)
     try:
         p.write_text(new_content)
-        return f"Edited {p} successfully."
+        replaced = count if replace_all else 1
+        return f"Replaced {replaced} occurrence(s) in {p}."
     except Exception as e:
         return f"Error writing file: {e}"
 

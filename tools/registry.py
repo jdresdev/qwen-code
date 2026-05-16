@@ -46,8 +46,9 @@ TOOL_SCHEMAS: list[dict] = [
         "function": {
             "name": "edit_file",
             "description": (
-                "Replace an exact string in a file. Fails if old_string is not found "
-                "or appears more than once. Use read_file first to get the exact text."
+                "Replace a string in a file. Fails if old_string is not found. "
+                "Fails if old_string appears more than once unless replace_all=true. "
+                "Use read_file first to get the exact text."
             ),
             "parameters": {
                 "type": "object",
@@ -55,6 +56,10 @@ TOOL_SCHEMAS: list[dict] = [
                     "path": {"type": "string", "description": "Path to the file."},
                     "old_string": {"type": "string", "description": "Exact string to find."},
                     "new_string": {"type": "string", "description": "Replacement string."},
+                    "replace_all": {
+                        "type": "boolean",
+                        "description": "Replace every occurrence instead of failing on duplicates. Default false.",
+                    },
                 },
                 "required": ["path", "old_string", "new_string"],
             },

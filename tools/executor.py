@@ -56,7 +56,13 @@ def execute_tool(name: str, arguments_json: str, config: Config) -> str:
         elif name == "write_file":
             return write_file(args["path"], args["content"], working_dir=wd)
         elif name == "edit_file":
-            return edit_file(args["path"], args["old_string"], args["new_string"], working_dir=wd)
+            return edit_file(
+                args["path"],
+                args["old_string"],
+                args["new_string"],
+                replace_all=args.get("replace_all", False),
+                working_dir=wd,
+            )
         elif name == "run_bash":
             return run_bash(
                 args["command"],
