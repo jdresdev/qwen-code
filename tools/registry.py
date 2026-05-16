@@ -334,4 +334,53 @@ TOOL_SCHEMAS: list[dict] = [
             },
         },
     },
+    {
+        "type": "function",
+        "function": {
+            "name": "get_symbol",
+            "description": (
+                "Extract a named function, class, or method from a source file using AST parsing. "
+                "Use dot notation for methods: 'MyClass.my_method'. "
+                "Supported: .py, .js, .jsx, .ts, .tsx."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "path": {"type": "string", "description": "Path to the source file."},
+                    "name": {
+                        "type": "string",
+                        "description": "Symbol name, e.g. 'parse_args' or 'MyClass.my_method'.",
+                    },
+                },
+                "required": ["path", "name"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "replace_symbol",
+            "description": (
+                "Replace the full source of a named function, class, or method with new source text. "
+                "The rest of the file is left unchanged. "
+                "Use dot notation for methods: 'MyClass.my_method'. "
+                "Supported: .py, .js, .jsx, .ts, .tsx."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "path": {"type": "string", "description": "Path to the source file."},
+                    "name": {
+                        "type": "string",
+                        "description": "Symbol name to replace, e.g. 'parse_args' or 'MyClass.my_method'.",
+                    },
+                    "new_source": {
+                        "type": "string",
+                        "description": "Complete replacement source including the def/class line, decorators, docstring, and body.",
+                    },
+                },
+                "required": ["path", "name", "new_source"],
+            },
+        },
+    },
 ]

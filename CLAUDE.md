@@ -95,6 +95,9 @@ tools/
   search.py        glob_files (pathlib.rglob), grep_files (ripgrep or Python re), list_dir
   git.py           git_status, git_diff, git_log (auto-approved), git_commit (requires confirmation)
   web.py           fetch_url — fetches a URL, converts HTML to markdown (auto-approved)
+  symbols.py       get_symbol (auto-approved), replace_symbol (requires confirmation)
+                   Both backed by tree-sitter; support .py, .js, .jsx, .ts, .tsx
+                   Dot-notation for methods: MyClass.my_method
 
 rag/
   embedder.py      Embedder — calls Ollama /v1/embeddings (nomic-embed-text, 768-dim)

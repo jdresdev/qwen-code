@@ -9,6 +9,7 @@ from tools.git import git_status, git_diff, git_log, git_commit
 from tools.shell import run_bash
 from tools.search import glob_files, grep_files, list_dir
 from tools.web import fetch_url
+from tools.symbols import get_symbol, replace_symbol
 
 # RAG singletons — lazily initialised on first use so that the agent
 # starts without requiring Qdrant/embedder to be available.
@@ -134,6 +135,10 @@ def execute_tool(name: str, arguments_json: str, config: Config) -> str:
                 url=args["url"],
                 max_chars=args.get("max_chars", 8000),
             )
+        elif name == "get_symbol":
+            return get_symbol(args["path"], args["name"])
+        elif name == "replace_symbol":
+            return replace_symbol(args["path"], args["name"], args["new_source"])
         else:
             return f"Error: unknown tool '{name}'"
     except KeyError as e:

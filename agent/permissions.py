@@ -15,6 +15,7 @@ AUTO_APPROVE = {
     "read_file", "glob_files", "grep_files", "list_dir", "retrieve_context",
     "git_status", "git_diff", "git_log",
     "fetch_url",
+    "get_symbol",
 }
 
 # Human-friendly descriptions of what each tool does
@@ -24,6 +25,7 @@ _DESCRIPTIONS = {
     "run_bash": "Run shell command",
     "ingest_documents": "Ingest documents into vector store",
     "git_commit": "Git commit",
+    "replace_symbol": "Replace symbol",
 }
 
 
@@ -99,6 +101,13 @@ def _show_permission_request(label: str, tool_name: str, args: dict) -> None:
             f"[red]- {old_str[:200]}[/red]\n"
             f"[green]+ {new_str[:200]}[/green]"
         )
+    elif tool_name == "replace_symbol":
+        path = args.get("path", "?")
+        name = args.get("name", "?")
+        preview = (args.get("new_source", "") or "")[:300]
+        content = f"[bold]File:[/bold] {path}\n[bold]Symbol:[/bold] {name}\n\n{preview}"
+        if len(args.get("new_source", "")) > 300:
+            content += "\n[dim]... (truncated)[/dim]"
     elif tool_name == "git_commit":
         msg = args.get("message", "")
         files = args.get("files")
