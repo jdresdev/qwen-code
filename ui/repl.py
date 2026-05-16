@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import threading
 from pathlib import Path
 
 from prompt_toolkit import PromptSession
@@ -58,6 +59,19 @@ def run_repl(config: Config) -> None:
             console.print(f"[red]Error:[/red] {e}")
 
 
+def _start_auto_index(config: Config) -> None:
+    """Start background RAG indexing of config.working_dir. Never raises."""
+    def _run() -> None:
+        try:
+            from rag.ingestion import auto_ingest
+            result = auto_ingest(config.working_dir, config)
+            console.print(f"[dim]{result}[/dim]")
+        except Exception as e:
+            console.print(f"[dim yellow]auto-index warning: {e}[/dim yellow]")
+
+    threading.Thread(target=_run, daemon=True).start()
+
+
 def _handle_command(cmd: str, agent: AgentLoop, config: Config) -> bool:
     """Return True to continue, False to exit."""
     parts = cmd.split(maxsplit=1)
@@ -85,6 +99,8 @@ def _handle_command(cmd: str, agent: AgentLoop, config: Config) -> bool:
                 config.working_dir = str(p)
                 os.chdir(p)
                 console.print(f"[dim]Working dir set to:[/dim] {p}")
+                if config.auto_index:
+                    _start_auto_index(config)
             else:
                 console.print(f"[red]Not a directory:[/red] {arg}")
         else:

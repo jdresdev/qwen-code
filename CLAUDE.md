@@ -40,6 +40,7 @@ python main.py
 python main.py "read main.py and explain it"
 python main.py --model qwen2.5-coder:32b --wd /path/to/project "list files"
 python main.py --base-url http://localhost:11434/v1  # override Ollama endpoint
+python main.py --no-index                            # skip auto-indexing working dir
 ```
 
 **Override settings at runtime via REPL commands:**
@@ -70,6 +71,7 @@ All config keys and their defaults:
 | `rag_chunk_size` | `500` | Words per chunk during ingestion |
 | `rag_chunk_overlap` | `50` | Overlapping words between chunks |
 | `max_tool_rounds` | `10` | Max tool-call rounds per user turn before stopping |
+| `auto_index` | `true` | Auto-index working dir at startup (set false to disable) |
 
 ## Architecture
 

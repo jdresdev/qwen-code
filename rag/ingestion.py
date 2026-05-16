@@ -15,6 +15,12 @@ TEXT_EXTENSIONS = {
 
 BATCH_SIZE = 32  # embed this many chunks per Ollama call
 
+EXCLUDED_DIRS = {
+    ".git", ".venv", "venv", "node_modules", "__pycache__",
+    ".mypy_cache", ".pytest_cache", ".tox", "dist", "build",
+}
+MAX_FILE_BYTES = 500 * 1024  # 500 KB
+
 
 def ingest(
     path: str,
@@ -102,6 +108,49 @@ def retrieve(
     return "\n\n".join(parts)
 
 
+def auto_ingest(directory: str, config) -> str:
+    """Index all code/text files in `directory`, skipping hidden/build dirs and large files.
+    Safe to call from a background thread — all errors are caught and returned as strings."""
+    p = Path(directory).resolve()
+    if not p.is_dir():
+        return f"auto-index: not a directory: {p}"
+
+    try:
+        embedder = Embedder(base_url=config.base_url, model=config.embed_model)
+        store = VectorStore(url=config.qdrant_url, dimension=embedder.dimension)
+    except Exception as e:
+        return f"auto-index: RAG backend unavailable: {e}"
+
+    files = _collect_auto_files(p)
+    if not files:
+        return "auto-index: no indexable files found."
+
+    total_chunks = 0
+    ingested = 0
+    for file in files:
+        try:
+            text = file.read_text(errors="replace")
+        except Exception:
+            continue
+        chunks = _chunk_text(text, chunk_size=config.rag_chunk_size, overlap=config.rag_chunk_overlap)
+        if not chunks:
+            continue
+        source = str(file)
+        try:
+            store.delete_by_source(config.rag_collection, source)
+        except Exception:
+            pass
+        chunk_dicts = [{"text": c, "source": source, "chunk_index": i} for i, c in enumerate(chunks)]
+        for batch_start in range(0, len(chunk_dicts), BATCH_SIZE):
+            batch = chunk_dicts[batch_start:batch_start + BATCH_SIZE]
+            vectors = embedder.embed_batch([c["text"] for c in batch])
+            store.upsert(config.rag_collection, batch, vectors)
+        total_chunks += len(chunks)
+        ingested += 1
+
+    return f"Indexed {ingested} file(s), {total_chunks} chunks into '{config.rag_collection}'."
+
+
 # ------------------------------------------------------------------
 # Helpers
 # ------------------------------------------------------------------
@@ -112,6 +161,26 @@ def _collect_files(p: Path) -> list[Path]:
     if p.is_dir():
         return sorted(f for f in p.rglob("*") if f.is_file() and _is_text_file(f))
     return []
+
+
+def _collect_auto_files(root: Path) -> list[Path]:
+    """Like _collect_files but skips hidden/build dirs, large files, and non-text files."""
+    result = []
+    for f in root.rglob("*"):
+        if not f.is_file():
+            continue
+        rel_parts = f.relative_to(root).parts
+        if any(part in EXCLUDED_DIRS or part.startswith(".") for part in rel_parts):
+            continue
+        if not _is_text_file(f):
+            continue
+        try:
+            if f.stat().st_size > MAX_FILE_BYTES:
+                continue
+        except Exception:
+            continue
+        result.append(f)
+    return sorted(result)
 
 
 def _is_text_file(p: Path) -> bool:

@@ -5,11 +5,29 @@ from __future__ import annotations
 
 import argparse
 import sys
+import threading
 from pathlib import Path
+
+from rich.console import Console
 
 from config import Config
 from agent.loop import AgentLoop
 from ui.repl import run_repl
+
+_console = Console()
+
+
+def _start_auto_index(config: Config) -> None:
+    """Kick off background indexing of config.working_dir. Never raises."""
+    def _run() -> None:
+        try:
+            from rag.ingestion import auto_ingest
+            result = auto_ingest(config.working_dir, config)
+            _console.print(f"[dim]{result}[/dim]")
+        except Exception as e:
+            _console.print(f"[dim yellow]auto-index warning: {e}[/dim yellow]")
+
+    threading.Thread(target=_run, daemon=True).start()
 
 
 def main() -> None:
@@ -28,6 +46,7 @@ Examples:
     parser.add_argument("--model", help="Override model name (default: qwen2.5-coder:7b)")
     parser.add_argument("--wd", "--working-dir", dest="working_dir", help="Set working directory")
     parser.add_argument("--base-url", help="Ollama API base URL (default: http://localhost:11434/v1)")
+    parser.add_argument("--no-index", action="store_true", help="Skip auto-indexing the working directory")
     args = parser.parse_args()
 
     config = Config.load()
@@ -42,6 +61,9 @@ Examples:
         config.working_dir = str(wd)
     if args.base_url:
         config.base_url = args.base_url
+
+    if config.auto_index and not args.no_index:
+        _start_auto_index(config)
 
     if args.prompt:
         # One-shot mode

@@ -22,6 +22,7 @@ DEFAULTS = {
     "rag_chunk_size": 500,
     "rag_chunk_overlap": 50,
     "max_tool_rounds": 10,
+    "auto_index": True,
 }
 
 
@@ -40,6 +41,7 @@ class Config:
     rag_chunk_size: int = DEFAULTS["rag_chunk_size"]
     rag_chunk_overlap: int = DEFAULTS["rag_chunk_overlap"]
     max_tool_rounds: int = DEFAULTS["max_tool_rounds"]
+    auto_index: bool = DEFAULTS["auto_index"]
     working_dir: str = field(default_factory=lambda: os.getcwd())
 
     @classmethod
